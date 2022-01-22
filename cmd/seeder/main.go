@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/AxelUser/mongo-delete-agent/seed"
 )
 
 func main() {
-	fmt.Println("Mongo delete agent")
+	log.Println("Mongo delete seeder started")
 	err := seed.Init("mongodb://localhost:27217", "testdb", "testcol")
 	if err != nil {
 		panic(err)
