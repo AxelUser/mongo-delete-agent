@@ -6,16 +6,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/AxelUser/mongo-delete-agent/config"
 	"github.com/AxelUser/mongo-delete-agent/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Init(conn config.MongoConnection) (err error) {
-	log.Printf("Starting seeding '%s.%s' at '%s'", conn.Db, conn.Col, conn.Uri)
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(conn.Uri))
+func Init(conf Config) (err error) {
+	log.Printf("Starting seeding '%s.%s' at '%s'", conf.Db, conf.Col, conf.Uri)
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(conf.Uri))
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("failed to seed mongo: %w", err)
@@ -34,12 +33,12 @@ func Init(conn config.MongoConnection) (err error) {
 		return err
 	}
 
-	crCol, err := createCol(client, conn.Db, conn.Col)
+	crCol, err := createCol(client, conf.Db, conf.Col)
 	if err != nil {
 		return err
 	}
 
-	err = seedRndData(crCol, 100, 10_000)
+	err = seedRndData(crCol, conf.Accounts, conf.Users)
 	if err != nil {
 		return err
 	}
@@ -96,8 +95,9 @@ func createCol(c *mongo.Client, db string, col string) (*mongo.Collection, error
 
 func seedRndData(col *mongo.Collection, clientCount int64, usersPerClient int64) error {
 	log.Printf("Starting seeding '%s.%s' with %d random entities", col.Database().Name(), col.Name(), clientCount*usersPerClient)
+	var insCount int64
 	for clId := int64(1); clId <= clientCount; clId++ {
-		batch := []interface{}{}
+		batch := make([]interface{}, 0, usersPerClient)
 		for usr := int64(1); usr <= usersPerClient; usr++ {
 			batch = append(batch, entities.Event{
 				ClientId: clId,
@@ -106,11 +106,14 @@ func seedRndData(col *mongo.Collection, clientCount int64, usersPerClient int64)
 				Time:     time.Now().UTC(),
 			})
 		}
-		_, err := col.InsertMany(context.Background(), batch)
+		res, err := col.InsertMany(context.Background(), batch)
 		if err != nil {
 			return fmt.Errorf("failed to insert documents: %w", err)
 		}
+		insCount += int64(len(res.InsertedIDs))
 	}
+
+	log.Printf("Inserted %d events", insCount)
 
 	return nil
 }

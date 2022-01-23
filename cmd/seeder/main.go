@@ -9,11 +9,16 @@ import (
 
 func main() {
 	log.Println("Data-seed started")
-	err := seed.Init(config.MongoConnection{
-		Uri: "mongodb://localhost:27217",
-		Db:  "testdb",
-		Col: "testcol",
-	})
+	err := seed.Init(
+		seed.Config{
+			MongoConnection: config.MongoConnection{
+				Uri: "mongodb://localhost:27217",
+				Db:  "testdb",
+				Col: "testcol",
+			},
+			Accounts: 10,
+			Users:    1_000_000,
+		})
 	if err != nil {
 		panic(err)
 	}
