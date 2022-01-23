@@ -6,15 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/AxelUser/mongo-delete-agent/config"
 	"github.com/AxelUser/mongo-delete-agent/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Init(uri string, db string, col string) (err error) {
-	log.Printf("Starting seeding '%s.%s' at '%s'", db, col, uri)
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
+func Init(conn config.MongoConnection) (err error) {
+	log.Printf("Starting seeding '%s.%s' at '%s'", conn.Db, conn.Col, conn.Uri)
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(conn.Uri))
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("failed to seed mongo: %w", err)
@@ -33,7 +34,7 @@ func Init(uri string, db string, col string) (err error) {
 		return err
 	}
 
-	crCol, err := createCol(client, db, col)
+	crCol, err := createCol(client, conn.Db, conn.Col)
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,9 @@ func createCol(c *mongo.Client, db string, col string) (*mongo.Collection, error
 
 	err = c.Database("admin").RunCommand(context.Background(), bson.D{
 		{Key: "shardCollection", Value: fmt.Sprintf("%s.%s", db, col)},
-		{Key: "key", Value: bson.D{{Key: "UserId", Value: 1}}},
+		{Key: "key", Value: bson.D{
+			{Key: "clientId", Value: 1},
+			{Key: "userId", Value: 1}}},
 	}).Err()
 
 	if err != nil {
