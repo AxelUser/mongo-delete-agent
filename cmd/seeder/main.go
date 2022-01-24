@@ -4,22 +4,19 @@ import (
 	"context"
 	"log"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/config"
 	"github.com/AxelUser/mongo-delete-agent/pkg/seed"
+	"github.com/jessevdk/go-flags"
 )
 
 func main() {
+	var c seed.Config
+	_, err := flags.Parse(&c)
+	if err != nil {
+		panic(err)
+	}
+
 	log.Println("Data-seed started")
-	err := seed.Init(context.Background(),
-		seed.Config{
-			MongoConnection: config.MongoConnection{
-				Uri: "mongodb://localhost:27217",
-				Db:  "testdb",
-				Col: "testcol",
-			},
-			Accounts: 10,
-			Users:    1_000_000,
-		})
+	err = seed.Init(context.Background(), c)
 	if err != nil {
 		panic(err)
 	}
