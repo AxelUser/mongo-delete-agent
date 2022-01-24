@@ -1,4 +1,4 @@
-package handler
+package models
 
 import (
 	"fmt"
@@ -10,26 +10,26 @@ type ClientId int64
 
 type UserId int64
 
-type DeletionRequest struct {
+type DataQuery struct {
 	client ClientId
 	user   *UserId
 }
 
-func CreateClientRequest(id ClientId) DeletionRequest {
-	return DeletionRequest{
+func CreateClientQuery(id ClientId) DataQuery {
+	return DataQuery{
 		client: id,
 		user:   nil,
 	}
 }
 
-func CreateUserRequest(cId ClientId, uId UserId) DeletionRequest {
-	return DeletionRequest{
+func CreateUserQuery(cId ClientId, uId UserId) DataQuery {
+	return DataQuery{
 		client: cId,
 		user:   &uId,
 	}
 }
 
-func (r DeletionRequest) GetFilter() bson.D {
+func (r DataQuery) GetFilter() bson.D {
 	switch {
 	case r.user == nil:
 		return bson.D{
@@ -43,7 +43,7 @@ func (r DeletionRequest) GetFilter() bson.D {
 	}
 }
 
-func (r DeletionRequest) String() string {
+func (r DataQuery) String() string {
 	if r.user == nil {
 		return fmt.Sprintf("Client: %d", r.client)
 	}

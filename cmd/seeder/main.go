@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 
-	"github.com/AxelUser/mongo-delete-agent/config"
-	"github.com/AxelUser/mongo-delete-agent/seed"
+	"github.com/AxelUser/mongo-delete-agent/pkg/config"
+	"github.com/AxelUser/mongo-delete-agent/pkg/seed"
 )
 
 func main() {
 	log.Println("Data-seed started")
-	err := seed.Init(
+	err := seed.Init(context.Background(),
 		seed.Config{
 			MongoConnection: config.MongoConnection{
 				Uri: "mongodb://localhost:27217",
