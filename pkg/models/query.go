@@ -10,6 +10,8 @@ type ClientId int64
 
 type UserId int64
 
+type EventTypeId string
+
 type DataQuery struct {
 	client ClientId
 	user   *UserId

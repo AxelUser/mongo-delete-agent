@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/AxelUser/mongo-delete-agent/pkg/config"
+	"github.com/AxelUser/mongo-delete-agent/pkg/entities"
 	"github.com/AxelUser/mongo-delete-agent/pkg/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -24,6 +26,56 @@ func CreateEventsRepository(ctx context.Context, conn config.MongoConnection) (*
 	return &EventsRepository{
 		col: col,
 	}, nil
+}
+
+type AccountStats struct {
+	AccountId int64 `bson:"_id"`
+	Events    int64 `bson:"events"`
+}
+
+func (r *EventsRepository) CountByAccount(ctx context.Context) ([]AccountStats, error) {
+	cur, err := r.col.Aggregate(ctx, bson.A{
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$clientId"},
+			{Key: "events", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "_id", Value: 1}}}},
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to count events by accounts: %w", err)
+	}
+
+	defer cur.Close(ctx)
+
+	var stats []AccountStats
+	if err := cur.All(ctx, &stats); err != nil {
+		return nil, fmt.Errorf("failed to decode account statistics: %w", err)
+	}
+
+	return stats, nil
+}
+
+func (r *EventsRepository) Get(ctx context.Context, c models.ClientId, u models.UserId, t models.EventTypeId, skip int64, take int64) ([]entities.Event, error) {
+	cur, err := r.col.Find(ctx, bson.D{
+		{Key: "clientId", Value: c},
+		{Key: "userId", Value: u},
+		{Key: "typeId", Value: t},
+	}, &options.FindOptions{
+		Skip:  &skip,
+		Limit: &take,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get events for 'ClientId:%d, UserId:%d, TypeId:%s': %w", c, u, t, err)
+	}
+
+	var res []entities.Event
+	if err := cur.All(ctx, &res); err != nil {
+		return nil, fmt.Errorf("failed to get events for 'ClientId:%d, UserId:%d, TypeId:%s': %w", c, u, t, err)
+	}
+
+	return res, nil
 }
 
 func (r *EventsRepository) Exists(ctx context.Context, q models.DataQuery) (bool, error) {

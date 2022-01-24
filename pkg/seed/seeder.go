@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/AxelUser/mongo-delete-agent/pkg/constants"
 	"github.com/AxelUser/mongo-delete-agent/pkg/entities"
 	"github.com/AxelUser/mongo-delete-agent/pkg/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,7 +40,7 @@ func Init(ctx context.Context, conf Config) (err error) {
 		return err
 	}
 
-	err = seedRndData(ctx, crCol, conf.Accounts, conf.Users)
+	err = seedRndData(ctx, crCol, conf.Accounts, conf.Users, conf.Events)
 	if err != nil {
 		return err
 	}
@@ -94,18 +95,23 @@ func createCol(ctx context.Context, c *mongo.Client, db string, col string) (*mo
 	return c.Database(db).Collection(col), nil
 }
 
-func seedRndData(ctx context.Context, col *mongo.Collection, clientCount int64, usersPerClient int64) error {
-	log.Printf("Starting seeding '%s.%s' with %d random entities", col.Database().Name(), col.Name(), clientCount*usersPerClient)
+func seedRndData(ctx context.Context, col *mongo.Collection, clientCount int, usersCount int, eventsCount int) error {
+	log.Printf("Starting seeding '%s.%s' with %d random entities", col.Database().Name(), col.Name(), clientCount*usersCount*eventsCount)
 	var insCount int64
-	for clId := int64(1); clId <= clientCount; clId++ {
-		batch := make([]interface{}, 0, usersPerClient)
-		for usr := int64(1); usr <= usersPerClient; usr++ {
-			batch = append(batch, entities.Event{
-				ClientId: clId,
-				UserId:   usr,
-				Value:    fmt.Sprintf("Value for user %d", clId),
-				Time:     time.Now().UTC(),
-			})
+	for clId := 1; clId <= clientCount; clId++ {
+		batch := make([]interface{}, 0, usersCount)
+		for usr := 1; usr <= usersCount; usr++ {
+			for e := 1; e <= eventsCount; e++ {
+				batch = append(batch, entities.Event{
+					ClientId: int64(clId),
+					UserId:   int64(usr),
+					TypeId:   constants.AllEventTypes[e%len(constants.AllEventTypes)],
+					Props: map[string]string{
+						"value": fmt.Sprintf("Value for user %d", clId),
+					},
+					Time: time.Now().UTC(),
+				})
+			}
 		}
 		res, err := col.InsertMany(ctx, batch)
 		if err != nil {
