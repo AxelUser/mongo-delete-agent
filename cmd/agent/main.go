@@ -15,7 +15,7 @@ func main() {
 			Db:  "testdb",
 			Col: "testcol",
 		},
-		WCount: 10,
+		WCount: 2,
 		Port:   8080,
 	})
 

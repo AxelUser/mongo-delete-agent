@@ -2,7 +2,7 @@ package agent
 
 import (
 	"fmt"
-	"strconv"
+	"net/http"
 
 	"github.com/AxelUser/mongo-delete-agent/agent/handler"
 	"github.com/gin-gonic/gin"
@@ -18,28 +18,42 @@ func Start(conf Config) error {
 	router := gin.Default()
 
 	router.POST("/delete/:clientId", func(c *gin.Context) {
-		if client, err := strconv.Atoi(c.Param("clientId")); err == nil {
-			h.Delete(handler.CreateClientRequest(handler.ClientId(client)))
-			c.Status(202)
-		} else {
-			c.Status(400)
+		req := struct {
+			ClientId int64 `uri:"clientId" binding:"required"`
+		}{}
+
+		if err := c.ShouldBindUri(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
+
+		err = h.Delete(handler.CreateClientRequest(handler.ClientId(req.ClientId)))
+		if err != nil {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusAccepted)
 	})
 
 	router.POST("/delete/:clientId/:userId", func(c *gin.Context) {
-		client, err := strconv.Atoi(c.Param("clientId"))
-		if err != nil {
-			c.Status(500)
+		req := struct {
+			ClientId int64 `uri:"clientId" binding:"required"`
+			UserId   int64 `uri:"userId" binding:"required"`
+		}{}
+
+		if err := c.ShouldBindUri(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		user, err := strconv.Atoi(c.Param("userId"))
+		err = h.Delete(handler.CreateUserRequest(handler.ClientId(req.ClientId), handler.UserId(req.UserId)))
 		if err != nil {
-			c.Status(500)
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
 			return
 		}
-		h.Delete(handler.CreateUserRequest(handler.ClientId(client), handler.UserId(user)))
-		c.Status(202)
+
+		c.Status(http.StatusAccepted)
 	})
 
 	router.Run(fmt.Sprintf(":%d", conf.Port))

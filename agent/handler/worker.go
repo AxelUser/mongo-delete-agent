@@ -2,17 +2,18 @@ package handler
 
 import (
 	"log"
+	"sync"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func startWorker(col *mongo.Collection, reqs <-chan DeletionRequest, dones chan<- bool, op func(col *mongo.Collection, r DeletionRequest) error) {
+func startWorker(col *mongo.Collection, reqs <-chan DeletionRequest, wg *sync.WaitGroup, op func(col *mongo.Collection, r DeletionRequest) error) {
 	go func() {
 		for {
-			r, closed := <-reqs
+			r, ok := <-reqs
 
-			if r == (DeletionRequest{}) && closed {
-				dones <- true
+			if r == (DeletionRequest{}) && !ok {
+				wg.Done()
 				break
 			}
 
