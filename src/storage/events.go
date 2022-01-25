@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/config"
-	"github.com/AxelUser/mongo-delete-agent/pkg/entities"
-	"github.com/AxelUser/mongo-delete-agent/pkg/models"
+	"github.com/AxelUser/mongo-delete-agent/src/config"
+	"github.com/AxelUser/mongo-delete-agent/src/entities"
+	"github.com/AxelUser/mongo-delete-agent/src/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

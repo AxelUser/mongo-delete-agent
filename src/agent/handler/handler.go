@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/models"
-	"github.com/AxelUser/mongo-delete-agent/pkg/storage"
+	"github.com/AxelUser/mongo-delete-agent/src/models"
+	"github.com/AxelUser/mongo-delete-agent/src/storage"
 )
 
 type Handler struct {

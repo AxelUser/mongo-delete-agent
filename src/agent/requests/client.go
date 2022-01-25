@@ -1,6 +1,6 @@
 package requests
 
-import "github.com/AxelUser/mongo-delete-agent/pkg/models"
+import "github.com/AxelUser/mongo-delete-agent/src/models"
 
 type ClientReq struct {
 	ClientId int64 `uri:"clientId" binding:"required"`

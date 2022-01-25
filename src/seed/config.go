@@ -1,6 +1,6 @@
 package seed
 
-import "github.com/AxelUser/mongo-delete-agent/pkg/config"
+import "github.com/AxelUser/mongo-delete-agent/src/config"
 
 type Config struct {
 	config.MongoConnection

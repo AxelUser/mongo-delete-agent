@@ -7,17 +7,17 @@ WEB_PORT=8081
 
 build_seeder:
 	echo "Compiling Seeder"
-	GOARCH=amd64 GOOS=linux go build -o bin/seeder-linux64 cmd/seeder/main.go
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/seeder-linux64 src/cmd/seeder/main.go
 
 build_agent:
 	echo "Compiling Deletion Agent"
-	GOARCH=amd64 GOOS=linux go build -o bin/agent-linux64 cmd/agent/main.go
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/agent-linux64 src/cmd/agent/main.go
 
 build_web:
 	echo "Compiling Test Web API"
-	GOARCH=amd64 GOOS=linux go build -o bin/web-linux64 cmd/web/main.go
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bin/web-linux64 src/cmd/web/main.go
 
-build: build_seeder build_agent
+build: build_seeder build_agent build_web
 
 composition_start:
 	(cd docker-compose && sh ./init-cluster.sh)
@@ -30,6 +30,12 @@ run_agent: build_agent
 
 run_web: build_web
 	chmod +x bin/web-linux64 && ./bin/web-linux64 --uri=$(DEF_MONGO_URI) --db=$(DEF_MONGO_DB) --col=$(DEF_MONGO_EVENTS_COL) --port=$(WEB_PORT)
+
+docker_agent_build: build_agent
+	docker build -t mongo-delete-agent-service -f Dockerfile.agent .
+
+docker_agent_run: docker_agent_build
+	docker run --name mongo-delete-agent-service -p 8080:80 -it mongo-delete-agent-service --uri=mongodb://host.docker.internal:27217 --db=testdb --col=Events
 
 clean:
 	rm bin/seeder-linux64

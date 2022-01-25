@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/web"
+	"github.com/AxelUser/mongo-delete-agent/src/web"
 	"github.com/jessevdk/go-flags"
 )
 

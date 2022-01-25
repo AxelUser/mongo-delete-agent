@@ -4,20 +4,19 @@ import (
 	"context"
 	"log"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/agent"
+	"github.com/AxelUser/mongo-delete-agent/src/seed"
 	"github.com/jessevdk/go-flags"
 )
 
 func main() {
-	var c agent.Config
+	var c seed.Config
 	_, err := flags.Parse(&c)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Println("Mongo deletion agent started")
-	err = agent.Start(context.Background(), c)
-
+	log.Println("Data-seed started")
+	err = seed.Init(context.Background(), c)
 	if err != nil {
 		panic(err)
 	}

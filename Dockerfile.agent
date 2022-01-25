@@ -1,0 +1,4 @@
+FROM scratch
+
+ADD bin/agent-linux64 /
+ENTRYPOINT  ["/agent-linux64"]

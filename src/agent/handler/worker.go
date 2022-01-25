@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/models"
+	"github.com/AxelUser/mongo-delete-agent/src/models"
 )
 
 func startWorker(ctx context.Context, qrs <-chan models.DataQuery, wg *sync.WaitGroup, op func(q models.DataQuery)) {

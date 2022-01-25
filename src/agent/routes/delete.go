@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/agent/handler"
-	"github.com/AxelUser/mongo-delete-agent/pkg/agent/requests"
-	"github.com/AxelUser/mongo-delete-agent/pkg/storage"
+	"github.com/AxelUser/mongo-delete-agent/src/agent/handler"
+	"github.com/AxelUser/mongo-delete-agent/src/agent/requests"
+	"github.com/AxelUser/mongo-delete-agent/src/storage"
 	"github.com/gin-gonic/gin"
 )
 

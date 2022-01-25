@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/AxelUser/mongo-delete-agent/pkg/agent/handler"
-	"github.com/AxelUser/mongo-delete-agent/pkg/agent/routes"
-	"github.com/AxelUser/mongo-delete-agent/pkg/storage"
+	"github.com/AxelUser/mongo-delete-agent/src/agent/handler"
+	"github.com/AxelUser/mongo-delete-agent/src/agent/routes"
+	"github.com/AxelUser/mongo-delete-agent/src/storage"
 	"github.com/gin-gonic/gin"
 )
 
