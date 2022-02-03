@@ -99,13 +99,28 @@ func (r *EventsRepository) InsertMany(ctx context.Context, ls []interface{}) (in
 	return len(res.InsertedIDs), nil
 }
 
-func (r *EventsRepository) Delete(ctx context.Context, q models.DataQuery) (int64, error) {
-	res, err := r.col.DeleteMany(ctx, q.GetFilter())
+func (r *EventsRepository) Delete(ctx context.Context, corrId int64, q models.DataQuery) (int64, error) {
+	delRes := struct {
+		Ok      int   `json:"ok"`
+		Deleted int64 `json:"n"`
+	}{}
+
+	err := r.col.Database().RunCommand(ctx, bson.D{
+		{Key: "delete", Value: r.col.Name()},
+		{Key: "ordered", Value: false},
+		{Key: "comment", Value: fmt.Sprintf("job:%d", corrId)},
+		{Key: "deletes", Value: bson.A{
+			bson.D{
+				{Key: "q", Value: q.GetFilter()},
+				{Key: "limit", Value: 0},
+			},
+		}},
+	}).Decode(&delRes)
 	if err != nil {
 		return 0, fmt.Errorf("failed to remove events for query '%s': %w", q, err)
 	}
 
-	return res.DeletedCount, nil
+	return delRes.Deleted, nil
 }
 
 func (r *EventsRepository) Close(ctx context.Context) error {

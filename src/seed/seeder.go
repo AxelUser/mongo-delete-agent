@@ -45,6 +45,11 @@ func Init(ctx context.Context, conf Config) (err error) {
 		return err
 	}
 
+	err = shardCol(ctx, client, crCol)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -69,40 +74,17 @@ func createCol(ctx context.Context, c *mongo.Client, db string, col string) (*mo
 
 	log.Printf("Created collection '%s.%s'", db, col)
 
-	err = c.Database("admin").RunCommand(ctx, bson.D{
-		{Key: "enableSharding", Value: db},
-	}).Err()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to shard db '%s': %w", db, err)
-	}
-
-	log.Printf("Enabled sharding for database '%s'", db)
-
-	err = c.Database("admin").RunCommand(ctx, bson.D{
-		{Key: "shardCollection", Value: fmt.Sprintf("%s.%s", db, col)},
-		{Key: "key", Value: bson.D{
-			{Key: "clientId", Value: 1},
-			{Key: "userId", Value: 1}}},
-	}).Err()
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to shard collection '%s.%s': %w", db, col, err)
-	}
-
-	log.Printf("Sharded collection '%s.%s'", db, col)
-
 	return c.Database(db).Collection(col), nil
 }
 
 func seedRndData(ctx context.Context, col *mongo.Collection, clientCount int, usersCount int, eventsCount int) error {
 	log.Printf("Starting seeding '%s.%s' with %d random entities", col.Database().Name(), col.Name(), clientCount*usersCount*eventsCount)
 	var insCount int64
-	for clId := 1; clId <= clientCount; clId++ {
-		batch := make([]interface{}, 0, usersCount)
-		for usr := 1; usr <= usersCount; usr++ {
-			for e := 1; e <= eventsCount; e++ {
-				batch = append(batch, entities.Event{
+	buffer := make([]interface{}, eventsCount)
+	for clId := 0; clId < clientCount; clId++ {
+		for usr := 0; usr < usersCount; usr++ {
+			for e := 0; e < len(buffer); e++ {
+				buffer[e] = entities.Event{
 					ClientId: int64(clId),
 					UserId:   int64(usr),
 					TypeId:   constants.AllEventTypes[e%len(constants.AllEventTypes)],
@@ -110,17 +92,54 @@ func seedRndData(ctx context.Context, col *mongo.Collection, clientCount int, us
 						"value": fmt.Sprintf("Value for user %d", clId),
 					},
 					Time: time.Now().UTC(),
-				})
+				}
 			}
+			res, err := col.InsertMany(ctx, buffer)
+			if err != nil {
+				return fmt.Errorf("failed to insert documents: %w", err)
+			}
+			insCount += int64(len(res.InsertedIDs))
 		}
-		res, err := col.InsertMany(ctx, batch)
-		if err != nil {
-			return fmt.Errorf("failed to insert documents: %w", err)
-		}
-		insCount += int64(len(res.InsertedIDs))
 	}
 
 	log.Printf("Inserted %d events", insCount)
 
+	return nil
+}
+
+func shardCol(ctx context.Context, c *mongo.Client, col *mongo.Collection) error {
+	index := bson.D{
+		{Key: "clientId", Value: 1},
+		{Key: "userId", Value: 1},
+	}
+
+	_, err := col.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys: index,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create index for sharded key")
+	}
+
+	log.Printf("Created index {clientId: 1, userId: 1} for '%s.%s'", col.Database().Name(), col.Name())
+
+	err = c.Database("admin").RunCommand(ctx, bson.D{
+		{Key: "enableSharding", Value: col.Database().Name()},
+	}).Err()
+
+	if err != nil {
+		return fmt.Errorf("failed to shard db '%s': %w", col.Database().Name(), err)
+	}
+
+	log.Printf("Enabled sharding for database '%s'", col.Database().Name())
+
+	err = c.Database("admin").RunCommand(ctx, bson.D{
+		{Key: "shardCollection", Value: fmt.Sprintf("%s.%s", col.Database().Name(), col.Name())},
+		{Key: "key", Value: index}}).Err()
+
+	if err != nil {
+		return fmt.Errorf("failed to shard collection '%s.%s': %w", col.Database().Name(), col.Name(), err)
+	}
+
+	log.Printf("Sharded collection '%s.%s'", col.Database().Name(), col.Name())
 	return nil
 }

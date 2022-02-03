@@ -14,14 +14,21 @@ func InitDelete(ctx context.Context, r *gin.Engine, repo *storage.EventsReposito
 	delete := r.Group("/delete")
 
 	delete.POST("/:clientId", func(c *gin.Context) {
-		var req requests.ClientReq
-
-		if err := c.ShouldBindUri(&req); err != nil {
+		var job requests.JobReq
+		err := c.ShouldBindHeader(&job)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		err := h.Delete(ctx, req.Query())
+		var filter requests.ClientReq
+		err = c.ShouldBindUri(&filter)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		err = h.Delete(ctx, job.JobId, filter.Query())
 		if err != nil {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
 			return
@@ -31,14 +38,21 @@ func InitDelete(ctx context.Context, r *gin.Engine, repo *storage.EventsReposito
 	})
 
 	delete.POST("/:clientId/:userId", func(c *gin.Context) {
-		var req requests.UserReq
-
-		if err := c.ShouldBindUri(&req); err != nil {
+		var job requests.JobReq
+		err := c.ShouldBindHeader(&job)
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		err := h.Delete(ctx, req.Query())
+		var filter requests.UserReq
+		err = c.ShouldBindUri(&filter)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		err = h.Delete(ctx, job.JobId, filter.Query())
 		if err != nil {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
 			return

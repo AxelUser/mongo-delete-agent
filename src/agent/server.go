@@ -21,11 +21,16 @@ func Start(ctx context.Context, conf Config) error {
 		return fmt.Errorf("failed to start agent: %w", err)
 	}
 
+	ah, err := storage.CreateAdminHelper(ctx, conf.Uri)
+	if err != nil {
+		return fmt.Errorf("failed to start agent: %w", err)
+	}
+
 	router := gin.Default()
 
 	routes.InitDelete(ctx, router, repo, h)
 	routes.InitExists(ctx, router, repo, h)
-	routes.InitStatus(ctx, router)
+	routes.InitStatus(ctx, router, ah)
 
 	router.Run(fmt.Sprintf(":%d", conf.Port))
 

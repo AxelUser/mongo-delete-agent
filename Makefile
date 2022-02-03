@@ -23,7 +23,7 @@ composition_start:
 	(cd docker-compose && sh ./init-cluster.sh)
 
 run_seeder: build_seeder
-	chmod +x bin/seeder-linux64 && ./bin/seeder-linux64 --uri=$(DEF_MONGO_URI) --db=$(DEF_MONGO_DB) --col=$(DEF_MONGO_EVENTS_COL) --accounts=10 --users=1000 --events=1000
+	chmod +x bin/seeder-linux64 && ./bin/seeder-linux64 --uri=$(DEF_MONGO_URI) --db=$(DEF_MONGO_DB) --col=$(DEF_MONGO_EVENTS_COL) --accounts=1 --users=10 --events=1000000
 
 run_agent: build_agent
 	chmod +x bin/agent-linux64 && ./bin/agent-linux64 --uri=$(DEF_MONGO_URI) --db=$(DEF_MONGO_DB) --col=$(DEF_MONGO_EVENTS_COL) --port=$(AGENT_PORT)

@@ -3,22 +3,20 @@ package handler
 import (
 	"context"
 	"sync"
-
-	"github.com/AxelUser/mongo-delete-agent/src/models"
 )
 
-func startWorker(ctx context.Context, qrs <-chan models.DataQuery, wg *sync.WaitGroup, op func(q models.DataQuery)) {
+func startWorker(ctx context.Context, jobs <-chan job, wg *sync.WaitGroup, op func(j job)) {
 	go func() {
 		defer wg.Done()
 		for {
 			select {
-			case q, ok := <-qrs:
-				if q == (models.DataQuery{}) && !ok {
-					break
+			case j, ok := <-jobs:
+				if !ok {
+					return
 				}
-				op(q)
+				op(j)
 			case <-ctx.Done():
-				break
+				return
 			}
 		}
 	}()

@@ -12,38 +12,41 @@ import (
 )
 
 type Handler struct {
-	reqs   chan<- models.DataQuery
+	jobs   chan<- job
 	dones  *sync.WaitGroup
 	wCount int
 }
 
 func Create(ctx context.Context, repo storage.EventsRepository, wCount int) (*Handler, error) {
-	reqs := make(chan models.DataQuery)
+	jobs := make(chan job)
 	var dones sync.WaitGroup
 	dones.Add(wCount)
 	for i := 0; i < wCount; i++ {
-		startWorker(ctx, reqs, &dones, func(q models.DataQuery) {
-			delCount, err := repo.Delete(context.Background(), q)
+		startWorker(ctx, jobs, &dones, func(j job) {
+			delCount, err := repo.Delete(context.Background(), j.id, j.query)
 			if err != nil {
 				log.Printf("Failed to delete events: %s", err)
 			}
 
-			log.Printf("Deleted %d events for request '%s'", delCount, q)
+			log.Printf("Deleted %d events for request '%s'", delCount, j.query)
 		})
 	}
 
 	return &Handler{
-		reqs:   reqs,
+		jobs:   jobs,
 		dones:  &dones,
 		wCount: wCount,
 	}, nil
 }
 
-func (h Handler) Delete(ctx context.Context, r models.DataQuery) error {
+func (h Handler) Delete(ctx context.Context, jobId int64, q models.DataQuery) error {
 	select {
 	case <-ctx.Done():
 		return nil
-	case h.reqs <- r:
+	case h.jobs <- job{
+		id:    jobId,
+		query: q,
+	}:
 		return nil
 	case <-time.After(15 * time.Second):
 		return errors.New("failed to schedule delete, timeout 15 seconds")

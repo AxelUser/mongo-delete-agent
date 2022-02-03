@@ -22,7 +22,7 @@ func InitExists(ctx context.Context, r *gin.Engine, repo *storage.EventsReposito
 			return
 		}
 
-		handleExist(ctx, repo, c, models.CreateClientQuery(models.ClientId(req.ClientId)))
+		handleExist(ctx, repo, c, models.CreateClientQuery(models.ClientId(*req.ClientId)))
 	})
 
 	exists.GET("/:clientId/:userId", func(c *gin.Context) {
@@ -33,7 +33,7 @@ func InitExists(ctx context.Context, r *gin.Engine, repo *storage.EventsReposito
 			return
 		}
 
-		handleExist(ctx, repo, c, models.CreateClientQuery(models.ClientId(req.ClientId)))
+		handleExist(ctx, repo, c, models.CreateClientQuery(models.ClientId(*req.ClientId)))
 	})
 }
 
